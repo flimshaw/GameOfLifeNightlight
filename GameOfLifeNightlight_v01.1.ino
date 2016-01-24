@@ -1,21 +1,34 @@
-/*************************************************** 
+/*
+
+   Conway's Game of Life Nightlight code
+   by Charlie Hoey <me@charliehoey.com>
+   MIT license
+
+   Thanks to Ian Truslove (@iantruslove) for releasing his
+   Arduino Game of Life code, from which I borrowed heavily.
+
+   http://brownsofa.org/blog/2010/12/30/arduino-8x8-game-of-life/
+
+*/
+
+/***************************************************
   This is a library for our I2C LED Backpacks
 
-  Designed specifically to work with the Adafruit LED Matrix backpacks 
+  Designed specifically to work with the Adafruit LED Matrix backpacks
   ----> http://www.adafruit.com/products/872
   ----> http://www.adafruit.com/products/871
   ----> http://www.adafruit.com/products/870
 
-  These displays use I2C to communicate, 2 pins are required to 
+  These displays use I2C to communicate, 2 pins are required to
   interface. There are multiple selectable I2C addresses. For backpacks
   with 2 Address Select pins: 0x70, 0x71, 0x72 or 0x73. For backpacks
   with 3 Address Select pins: 0x70 thru 0x77
 
-  Adafruit invests time and resources providing this open source code, 
-  please support Adafruit and open-source hardware by purchasing 
+  Adafruit invests time and resources providing this open source code,
+  please support Adafruit and open-source hardware by purchasing
   products from Adafruit!
 
-  Written by Limor Fried/Ladyada for Adafruit Industries.  
+  Written by Limor Fried/Ladyada for Adafruit Industries.
   BSD license, all text above must be included in any redistribution
  ****************************************************/
 #include <TinyWireM.h>
@@ -94,7 +107,7 @@ unsigned long tmp;
 byte getRandom()
 {
   m_z += 82;
-  if(m_z >= 255) m_z -= 255; 
+  if(m_z >= 255) m_z -= 255;
   return byte(m_z);
 }
 
@@ -104,9 +117,9 @@ byte getRandom()
 // apply the three rules to it over and over
 
 void randomizeGameBoard() {
-  for( byte y = 0; y < NUMROWS; y++ ) {  
+  for( byte y = 0; y < NUMROWS; y++ ) {
     for( byte x = 0; x < NUMCOLS; x++ ) {
-      if( getRandom() % m_w < m_w >> 2 ) { 
+      if( getRandom() % m_w < m_w >> 2 ) {
         gameBoard[y][x] = 1;
       } else {
         gameBoard[y][x] = 0;
@@ -155,19 +168,19 @@ boolean isCellAlive(char row, char col) {
 void calculateNewGameBoard() {
 
   ALIVE = false;
-  
+
   for (byte row=0; row<NUMROWS; row++) {
     for (byte col=0; col<NUMCOLS; col++) {
       byte numNeighbors = countNeighbors(row, col);
   bool g = gameBoard[row][col];
-      
+
   // Any live cell with fewer than two live
-  // neighbours dies, as if caused by 
+  // neighbours dies, as if caused by
   // under-population.
       if (g && numNeighbors < 2) {
         newGameBoard[row][col] = false;
 
-  // Any live cell with two or three live 
+  // Any live cell with two or three live
   // neighbours lives on to the next generation.
       } else if (g && (numNeighbors == 2 || numNeighbors == 3)) {
         newGameBoard[row][col] = true;
@@ -177,7 +190,7 @@ void calculateNewGameBoard() {
       } else if (g && numNeighbors > 3) {
         newGameBoard[row][col] = false;
 
-      // Any dead cell with exactly three live 
+      // Any dead cell with exactly three live
   // neighbours becomes a live cell, as if by
   // reproduction.
       } else if (!g && numNeighbors == 3) {
@@ -188,11 +201,11 @@ void calculateNewGameBoard() {
         newGameBoard[row][col] = false;
       }
 
-      
+
   // if there is an alive cell, mark ALIVE to
   // true, and tell the processor we’re still
   // alive.
-  
+
   if( g == true && ALIVE == false ) {
         ALIVE = true;
         asm("wdr");
@@ -216,30 +229,30 @@ void swapGameBoards() {
 // above to keep the simulation running
 
 void loop() {
-  
+
   // Increase the number of generations we have
   // calculated. If we’ve done more than 125, or
-  // no cells are alive, randomize the board.  
+  // no cells are alive, randomize the board.
   lifeCount++;
   if( lifeCount >= MAX_GENERATIONS || ALIVE == false ) {
     randomizeGameBoard();
     lifeCount = 0;
   }
-  
+
   // Apply one iteration of the Game of Life rules
   // do the game board
   calculateNewGameBoard();
 
   // clear the LED display
   matrix.clear();
-  
+
   // for each pixel in the display, set it to on if
   // its corresponding cell is alive in the new board
 
   for( int y = 0; y < 8; y++ ) {
     for( int x = 0; x < 8; x++ ) {
       if( newGameBoard[y][x] ) matrix.drawPixel(x, y, LED_ON);
-    }    
+    }
   }
 
   // copy the new game board to the old one, so we
